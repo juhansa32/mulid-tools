@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MULID — All-in-One Converter</title>
+
+<!-- Libraries (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#e9e9ea; --card:#fff; --muted:#666; --accent:#111;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR';
+  background:var(--bg);
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAEElEQVR42mP8/5+hHgAHggJ/lD1gVAAAAABJRU5ErkJggg==');
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  color:var(--accent);
+  padding:28px;
+}
+.container{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
+.header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.logo{font-weight:700;font-size:20px}
+.small{color:var(--muted);font-size:13px}
+.card{background:var(--card);border-radius:12px;padding:18px;border:1px solid #e6e6e6;box-shadow:0 6px 20px rgba(0,0,0,0.04)}
+#dropArea{min-height:220px;border:2px dashed #ddd;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+#dropArea.drag{border-color:var(--accent)}
+.controls{display:flex;flex-direction:column;gap:10px}
+.select,input,button{width:100%;padding:10px;border-radius:10px;border:1px solid #d6d6d6;font-size:14px}
+button.primary{background:var(--accent);color:#fff;border:0;cursor:pointer;font-weight:600}
+.progress{height:10px;background:#f0f0f0;border-radius:8px;overflow:hidden}
+.progress > i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.log{height:140px;overflow:auto;background:#fafafa;padding:10px;border-radius:8px;border:1px solid #f0f0f0;font-size:13px;color:var(--muted)}
+.feature{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;border:1px solid #f3f3f3}
+.feature img{width:28px;opacity:.75}
+
+.footer{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:12px;font-size:13px}
+
+/* Responsive */
+@media (max-width:980px){
+  .container{grid-template-columns:1fr; padding-bottom:40px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div>
+      <div class="logo">MULID</div>
+      <div class="small">All-in-one Converter — 이미지 · 영상 · 오디오 · 문서 · ZIP</div>
+    </div>
+    <div class="small">Client-first · Optional Server</div>
+  </div>
+
+  <!-- Left: Drop area + options -->
+  <div class="card">
+    <h3>1) 파일 추가 (드래그&드롭 또는 클릭)</h3>
+    <div id="dropArea">
+      <img src="https://img.icons8.com/ios-glyphs/60/upload--v1.png" style="width:44px;opacity:.6"/>
+      <div id="dropText">파일을 끌어다 놓거나 클릭하세요 (여러 파일 가능)</div>
+      <div class="small">이미지: jpg/png/webp · 영상: mp4/mov · 오디오: mp3/wav · 문서: txt · zip</div>
+    </div>
+    <input type="file" id="fileInput" style="display:none" multiple>
+
+    <h3 style="margin-top:16px">2) 출력 옵션</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <select id="targetFormat">
+        <optgroup label="이미지">
+          <option value="webp">WEBP</option>
+          <option value="jpeg">JPEG</option>
+          <option value="png">PNG</option>
+        </optgroup>
+        <optgroup label="오디오/영상">
+          <option value="mp3">MP3 (오디오)</option>
+          <option value="wav">WAV (오디오)</option>
+          <option value="mp4">MP4 (영상)</option>
+          <option value="gif">GIF (애니)</option>
+        </optgroup>
+        <optgroup label="문서/기타">
+          <option value="pdf">PDF (텍스트→PDF)</option>
+          <option value="zip">ZIP (파일 압축)</option>
+          <option value="txt">TXT</option>
+        </optgroup>
+      </select>
+
+      <input type="number" id="qualityInput" min="10" max="100" value="85" title="이미지 품질(10-100)">
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="primary" id="convertBtn">변환 시작</button>
+      <button id="clearBtn">지우기</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <div class="small">진행</div>
+      <div class="progress" style="margin-top:6px"><i id="progressBar"></i></div>
+    </div>
+
+    <div style="margin-top:12px">
+      <div class="small">로그</div>
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+
+  <!-- Right: Controls / features -->
+  <aside class="card">
+    <h4>도움말 & 기능</h4>
+    <div style="display:grid;gap:8px;margin-top:8px">
+      <div class="feature"><img src="https://img.icons8.com/ios-glyphs/60/picture.png"/>이미지 변환 (품질 조절)</div>
+      <div class="feature"><img src="https://img.icons8.com/ios-glyphs/60/video.png"/>영상/오디오 변환 (ffmpeg.wasm)</div>
+      <div class="feature"><img src="https://img.icons8.com/ios-glyphs/60/zip.png"/>ZIP 압축 / 압축 해제 (JSZip)</div>
+      <div class="feature"><img src="https://img.icons8.com/ios-glyphs/60/document.png"/>텍스트 → PDF (pdf-lib)</div>
+    </div>
+
+    <h4 style="margin-top:14px">설정</h4>
+    <div style="display:grid;gap:8px;margin-top:8px">
+      <label class="small">파일명 패턴</label>
+      <input id="namePattern" placeholder="{orig}_converted" value="{orig}_converted">
+      <label class="small">FFmpeg (클라이언트) 사용시 초기 로딩: lazy-load</label>
+      <div class="small">※ 대용량/자동화는 서버 ffmpeg 권장</div>
+    </div>
+  </aside>
+
+  <div class="footer">MULID © 2025 — Client-side converts for small files. For heavy work use server-side.</div>
+</div>
+
+<script>
+/* ===== Utilities ===== */
+const $ = id => document.getElementById(id);
+const log = txt => { const l=$('log'); l.textContent += txt + '\\n'; l.scrollTop = l.scrollHeight; };
+const setProgress = p => $('progressBar').style.width = Math.min(100, Math.max(0,p)) + '%';
+const downloadBlob = (blob, name) => { const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),60000); };
+
+/* ===== State ===== */
+let fileQueue = [];
+
+/* ===== Drop & Input ===== */
+const dropArea = $('dropArea'), fileInput = $('fileInput');
+dropArea.addEventListener('click', ()=> fileInput.click());
+['dragenter','dragover'].forEach(ev=>dropArea.addEventListener(ev,e=>{ e.preventDefault(); e.stopPropagation(); dropArea.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev=>dropArea.addEventListener(ev,e=>{ e.preventDefault(); e.stopPropagation(); dropArea.classList.remove('drag'); }));
+dropArea.addEventListener('drop', e=>{
+  const fl = Array.from(e.dataTransfer.files || []);
+  addFiles(fl);
+});
+fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+
+function addFiles(list){
+  fileQueue.push(...list);
+  $('dropText').innerText = `${fileQueue.length}개 파일 준비됨`;
+  log(`${list.length}개 파일 추가됨`);
+}
+
+/* ===== Convert Handlers ===== */
+const convertBtn = $('convertBtn'), clearBtn = $('clearBtn');
+convertBtn.addEventListener('click', startAll);
+clearBtn.addEventListener('click', ()=>{ fileQueue=[]; $('dropText').innerText = '파일을 끌어다 놓거나 클릭하세요'; log('파일 목록 초기화'); setProgress(0); });
+
+/* Lazy ffmpeg loader */
+let ffmpeg = null;
+let ffmpegLoading = false;
+async function ensureFFmpeg(){
+  if(ffmpeg) return ffmpeg;
+  if(ffmpegLoading) { while(!ffmpeg) await new Promise(r=>setTimeout(r,100)); return ffmpeg; }
+  ffmpegLoading = true;
+  log('FFmpeg 로딩 시작 (초기 로딩은 시간이 걸립니다)...');
+  // using unpkg CDN build
+  const { createFFmpeg, fetchFile } = FFmpeg;
+  ffmpeg = createFFmpeg({ log:false });
+  await ffmpeg.load();
+  ffmpeg._fetchFile = fetchFile;
+  log('FFmpeg 로드 완료');
+  return ffmpeg;
+}
+
+/* Main: iterate queue */
+async function startAll(){
+  if(!fileQueue.length){ alert('파일을 선택하세요'); return; }
+  const target = $('targetFormat').value;
+  const quality = parseInt($('qualityInput').value || 85,10)/100;
+  const pattern = $('namePattern').value || '{orig}_converted';
+  setProgress(0);
+  log('작업 시작: ' + new Date().toLocaleTimeString());
+  for(let i=0;i<fileQueue.length;i++){
+    const f = fileQueue[i];
+    try{
+      if(f.type.startsWith('image/')) await handleImage(f,target,quality,pattern);
+      else if(f.type.startsWith('video/') || f.type.startsWith('audio/')) await handleMedia(f,target,pattern);
+      else if(f.name.match(/\.zip$/i)) await handleZipUnzip(f,target,pattern);
+      else if(f.type.startsWith('text/') || f.name.match(/\.(txt|md)$/i)) await handleText(f,target,pattern);
+      else { log('지원 안되는 형식: ' + f.name); }
+    }catch(e){ log('오류('+f.name+'): '+ (e.message||e)); }
+    setProgress(Math.round(((i+1)/fileQueue.length)*100));
+  }
+  log('모든 작업 완료: ' + new Date().toLocaleTimeString());
+  fileQueue = [];
+  $('dropText').innerText = '파일을 끌어다 놓거나 클릭하세요';
+}
+
+/* ===== Image via Canvas ===== */
+async function handleImage(file,target,quality,pattern){
+  log('[이미지] 처리: ' + file.name);
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width; canvas.height = bitmap.height;
+  const ctx = canvas.getContext('2d'); ctx.drawImage(bitmap,0,0);
+  let mime = 'image/webp';
+  if(target==='jpeg') mime='image/jpeg';
+  else if(target==='png') mime='image/png';
+  const blob = await new Promise(res => canvas.toBlob(res, mime, quality));
+  const ext = mime.split('/')[1].replace('jpeg','jpg');
+  const outName = pattern.replace('{orig}', file.name.replace(/\.[^.]+$/,''));
+  downloadBlob(blob, outName + '.' + ext);
+  log('이미지 변환 완료: ' + outName + '.' + ext);
+}
+
+/* ===== ZIP compress/uncompress (JSZip) ===== */
+async function handleZipUnzip(file,target,pattern){
+  const JSZipLib = window.JSZip;
+  if(file.name.match(/\.zip$/i) && target !== 'zip'){
+    log('[ZIP] 압축 해제: ' + file.name);
+    const zip = await JSZipLib.loadAsync(await file.arrayBuffer());
+    const names = Object.keys(zip.files);
+    for(const n of names){
+      if(zip.files[n].dir) continue;
+      const blob = await zip.files[n].async('blob');
+      downloadBlob(blob, n);
+      log('압축 해제: ' + n);
+    }
+  } else if(target === 'zip'){
+    log('[ZIP] 압축 생성: ' + file.name);
+    const zip = new JSZipLib();
+    zip.file(file.name, await file.arrayBuffer());
+    const content = await zip.generateAsync({type:'blob'});
+    const outName = (pattern||'{orig}').replace('{orig}', file.name.replace(/\.[^.]+$/,''));
+    downloadBlob(content, outName + '.zip');
+    log('ZIP 생성 완료: ' + outName + '.zip');
+  } else {
+    log('ZIP 작업 조건 아님: ' + file.name);
+  }
+}
+
+/* ===== Text -> TXT / PDF ===== */
+async function handleText(file,target,pattern){
+  log('[텍스트] 처리: ' + file.name);
+  const txt = await file.text();
+  const outBase = pattern.replace('{orig}', file.name.replace(/\.[^.]+$/,''));
+  if(target === 'txt'){
+    const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+    downloadBlob(blob, outBase + '.txt'); log('TXT 저장: ' + outBase + '.txt');
+  } else if(target === 'pdf'){
+    const { PDFDocument, StandardFonts } = PDFLib;
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontSize = 12;
+    const margin = 40;
+    const lines = txt.split('\\n');
+    let cursorY = page.getHeight() - margin;
+    page.drawText(lines.join('\\n').slice(0,4000), { x: margin, y: cursorY - fontSize, size: fontSize, font });
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes],{type:'application/pdf'});
+    downloadBlob(blob, outBase + '.pdf'); log('PDF 생성: ' + outBase + '.pdf');
+  } else {
+    log('텍스트 대상 포맷 아님: ' + target);
+  }
+}
+
+/* ===== Media (audio/video) via ffmpeg.wasm ===== */
+async function handleMedia(file,target,pattern){
+  log('[미디어] 준비: ' + file.name + ' → ' + target);
+  // Lazy-load FFmpeg
+  await ensureFFmpeg();
+  const ff = ffmpeg;
+  const inName = 'in_' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9_.-]/g,'_');
+  const outName = 'out.' + target;
+  log('ffmpeg: 파일 쓰기');
+  ff.FS('writeFile', inName, await ff._fetchFile(file));
+  log('ffmpeg: 변환 실행 (기본 설정)');
+  if(target === 'mp3'){
+    await ff.run('-i', inName, '-vn', '-b:a', '192k', outName);
+  } else if(target === 'wav'){
+    await ff.run('-i', inName, '-vn', outName);
+  } else if(target === 'mp4'){
+    await ff.run('-i', inName, '-c:v', 'libx264', '-crf', '23', '-preset', 'veryfast', outName);
+  } else if(target === 'gif'){
+    await ff.run('-i', inName, '-vf', 'fps=10,scale=320:-1:flags=lanczos', '-loop', '0', outName);
+  } else {
+    log('FFmpeg: 지원하지 않는 포맷: ' + target);
+    try{ ff.FS('unlink', inName); }catch(e){}
+    return;
+  }
+  const data = ff.FS('readFile', outName);
+  const blob = new Blob([data.buffer], {type: mimeForExt(target)});
+  const outBase = pattern.replace('{orig}', file.name.replace(/\.[^.]+$/,''));
+  downloadBlob(blob, outBase + '.' + target);
+  log('미디어 변환 완료: ' + outBase + '.' + target);
+  try{ ff.FS('unlink', inName); ff.FS('unlink', outName); }catch(e){}
+}
+
+function mimeForExt(ext){ const map = { mp3:'audio/mpeg', wav:'audio/wav', mp4:'video/mp4', gif:'image/gif'}; return map[ext]||'application/octet-stream'; }
+
+</script>
+
+<!-- FFmpeg script (lazy-load object) -->
+<script>
+/* Provide global FFmpeg loader object — small wrapper to load from CDN when needed */
+(function(){
+  if(window.FFmpeg) return;
+  window.FFmpeg = {
+    createFFmpeg: (...args) => {
+      return new Promise(async (resolve, reject) => {
+        if(window._ffmpegCreate) return resolve(window._ffmpegCreate(...args));
+        const tag = document.createElement('script');
+        tag.src = 'https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
+        tag.onload = () => {
+          const create = (window.createFFmpeg || (window.FFmpeg && window.FFmpeg.createFFmpeg) || (window._ffmpeg && window._ffmpeg.createFFmpeg));
+          try{ resolve((window.createFFmpeg || window.FFmpeg.createFFmpeg)(...args)); }catch(e){ reject(e); }
+        };
+        tag.onerror = reject;
+        document.head.appendChild(tag);
+      });
+    },
+    fetchFile: (file) => {
+      return new Promise(async (res) => {
+        const arr = await file.arrayBuffer();
+        res(new Uint8Array(arr));
+      });
+    }
+  };
+})();
+</script>
+
+</body>
+</html>
