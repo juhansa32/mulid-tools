@@ -3,37 +3,33 @@ const multer = require('multer');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+app.use(cors());
+
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+const upload = multer({ dest: uploadDir });
 
 app.post('/upload-and-convert', upload.single('file'), (req, res) => {
-  if(!req.file) return res.status(400).send('file required');
-  const target = req.body.target || 'mp4';
-  const inPath = req.file.path;
-  const outName = path.basename(req.file.originalname, path.extname(req.file.originalname)) + '.' + target;
-  const outPath = path.join('uploads', 'out-' + Date.now() + '-' + outName);
+  if (!req.file) return res.status(400).send('file required');
 
-  // Example ffmpeg command: adapt for your target / options
-  const args = ['-i', inPath, '-c:v', 'libx264', '-crf', '23', '-preset', 'veryfast', outPath];
-  if(target === 'mp3') args.splice(2, 0, '-vn', '-b:a', '192k'); // simple tweak for mp3
-
-  const ff = spawn('ffmpeg', args);
-
-  ff.stderr.on('data', d => console.log(String(d)));
-  ff.on('error', err => {
-    console.error(err); res.status(500).send('ffmpeg spawn error');
-  });
-  ff.on('close', code => {
-    if(code !== 0) { res.status(500).send('ffmpeg failed'); cleanup(); return; }
-    // stream file back
-    res.download(outPath, outName, err => { cleanup(); });
+  // 🔴 임시: 변환 안 하고 서버만 살아있는지 확인
+  res.json({
+    status: 'ok',
+    filename: req.file.originalname,
+    message: 'Server is alive. Conversion will be enabled later.'
   });
 
-  function cleanup(){
-    try{ fs.unlinkSync(inPath); }catch(e){}
-    try{ fs.unlinkSync(outPath); }catch(e){}
-  }
+  // 파일 정리
+  try { fs.unlinkSync(req.file.path); } catch (e) {}
 });
 
-app.listen(3000, ()=> console.log('Server listening on :3000'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log('Server listening on :' + PORT);
+});
