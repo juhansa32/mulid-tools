@@ -5,61 +5,176 @@
   <title>Mulid Tools - 무료 오디오 변환기</title>
   <meta name="description" content="설치 없이 mp3, wav 등 오디오 파일을 무료로 변환하세요. 브라우저에서 바로 사용 가능합니다.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      background: #fafafa;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    h1, h2 {
+      margin-bottom: 10px;
+    }
+
+    section {
+      margin-bottom: 40px;
+    }
+
+    .box {
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    progress {
+      width: 100%;
+      height: 18px;
+      margin-top: 8px;
+    }
+
+    footer {
+      margin-top: 60px;
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+    }
+  </style>
 </head>
+
 <body>
 
-  <main style="max-width:720px;margin:40px auto;font-family:sans-serif;line-height:1.6;">
+<main>
 
-    <!-- 🔥 헤더 -->
-    <section style="text-align:center;margin-bottom:40px;">
-      <h1>Mulid Tools</h1>
-      <p>
-        설치 없이 사용하는 <strong>무료 오디오 변환 웹 도구</strong><br />
-        mp3 · wav 등 파일을 브라우저에서 바로 변환하세요.
-      </p>
-    </section>
+  <!-- 🔥 헤더 -->
+  <section style="text-align:center;">
+    <h1>Mulid Tools</h1>
+    <p>
+      설치 없이 사용하는 <strong>무료 오디오 변환 웹 도구</strong><br />
+      mp3 · wav 등 오디오 파일을 브라우저에서 바로 변환하세요.
+    </p>
+  </section>
 
-    <!-- 🎯 변환 영역 -->
-    <section style="border:1px solid #ddd;padding:20px;border-radius:8px;">
-      <h2>파일 변환</h2>
-      <input type="file" id="fileInput" />
-      <br /><br />
-      <button id="uploadBtn">변환하기</button>
+  <!-- 🎯 변환 영역 -->
+  <section class="box">
+    <h2>파일 변환</h2>
 
-      <!-- 로딩 UI (네가 만든 거 연결) -->
-      <div id="loading" style="display:none;margin-top:15px;">
-        <div>변환 중입니다… ⏳</div>
-        <progress id="progressBar" value="0" max="100"></progress>
-      </div>
-    </section>
+    <input type="file" id="fileInput" />
+    <br /><br />
+    <button id="uploadBtn">변환하기</button>
 
-    <!-- 📘 사용 방법 -->
-    <section style="margin-top:40px;">
-      <h2>사용 방법</h2>
-      <ol>
-        <li>변환할 오디오 파일을 선택합니다.</li>
-        <li>변환하기 버튼을 누릅니다.</li>
-        <li>변환이 완료되면 파일을 다운로드합니다.</li>
-      </ol>
-    </section>
+    <!-- 로딩 UI -->
+    <div id="loading" style="display:none; margin-top:15px;">
+      <div>변환 중입니다… ⏳</div>
+      <progress id="progressBar" value="0" max="100"></progress>
+    </div>
+  </section>
 
-    <!-- 🔒 안내 -->
-    <section style="margin-top:30px;">
-      <h2>안전 안내</h2>
-      <ul>
-        <li>업로드된 파일은 변환 후 자동으로 삭제됩니다.</li>
-        <li>회원가입 없이 무료로 이용할 수 있습니다.</li>
-        <li>브라우저에서 직접 처리되며 악성코드는 없습니다.</li>
-      </ul>
-    </section>
+  <!-- 📘 사용 방법 -->
+  <section>
+    <h2>사용 방법</h2>
+    <ol>
+      <li>변환할 오디오 파일을 선택합니다.</li>
+      <li>변환하기 버튼을 누릅니다.</li>
+      <li>변환이 완료되면 파일이 자동으로 다운로드됩니다.</li>
+    </ol>
+  </section>
 
-    <!-- 🧾 푸터 -->
-    <footer style="margin-top:50px;font-size:14px;color:#666;text-align:center;">
-      <p>© 2026 Mulid Tools</p>
-      <p>본 사이트는 개인 프로젝트이며 테스트용 서비스입니다.</p>
-    </footer>
+  <!-- 🔒 안내 -->
+  <section>
+    <h2>안전 안내</h2>
+    <ul>
+      <li>업로드된 파일은 변환 후 자동으로 삭제됩니다.</li>
+      <li>회원가입 없이 무료로 이용할 수 있습니다.</li>
+      <li>본 사이트는 개인 프로젝트로 운영됩니다.</li>
+    </ul>
+  </section>
 
-  </main>
+  <!-- 🧾 푸터 -->
+  <footer>
+    <p>© 2026 Mulid Tools</p>
+    <p>문의 및 피드백은 GitHub 저장소를 통해 주세요.</p>
+  </footer>
+
+</main>
+
+<!-- ⚙️ JS: 진행바 + 자동 다운로드 -->
+<script>
+const uploadBtn = document.getElementById("uploadBtn");
+const fileInput = document.getElementById("fileInput");
+const loading = document.getElementById("loading");
+const progressBar = document.getElementById("progressBar");
+
+uploadBtn.addEventListener("click", async () => {
+  if (!fileInput.files.length) {
+    alert("파일을 선택해주세요");
+    return;
+  }
+
+  uploadBtn.disabled = true;
+  loading.style.display = "block";
+  progressBar.value = 0;
+
+  // UX용 가짜 진행바
+  let percent = 0;
+  const timer = setInterval(() => {
+    percent += 3;
+    if (percent >= 95) percent = 95;
+    progressBar.value = percent;
+  }, 200);
+
+  try {
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    const res = await fetch("⚠️여기에_서버주소⚠️/upload-and-convert", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!data.success) throw new Error("변환 실패");
+
+    progressBar.value = 100;
+
+    // 자동 다운로드
+    const a = document.createElement("a");
+    a.href = `⚠️여기에_서버주소⚠️/download/${data.output}`;
+    a.download = data.output;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+  } catch (err) {
+    alert("변환 중 오류가 발생했습니다");
+    console.error(err);
+  } finally {
+    clearInterval(timer);
+    uploadBtn.disabled = false;
+    loading.style.display = "none";
+  }
+});
+</script>
 
 </body>
 </html>
