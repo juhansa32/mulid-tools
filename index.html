@@ -1,90 +1,70 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>Mulid Tools - 종합 변환기</title>
-  <style>
-    body { font-family: Arial; padding: 20px; background: #f9f9f9; }
-    h1 { color: #333; }
-    input, select, button { margin: 5px 0; display: block; padding: 8px; font-size: 14px; }
-    #progressBar { width: 100%; height: 20px; background: #eee; margin-top: 10px; border-radius: 5px; overflow: hidden; }
-    #progress { width: 0%; height: 100%; background: #4caf50; transition: width 0.3s; }
-    #downloadLink { display: none; margin-top: 10px; color: white; background: #007bff; padding: 8px 12px; text-decoration: none; border-radius: 4px; }
-  </style>
+<meta charset="UTF-8">
+<title>Mulid Tools 테스트 완전판</title>
+<style>
+  body { font-family: Arial; padding: 20px; }
+  h1 { color: #333; }
+  #status { margin-top: 10px; font-weight: bold; }
+  #downloadLink { margin-top: 10px; display: inline-block; background: #4CAF50; color: white; padding: 5px 10px; text-decoration: none; border-radius: 5px; }
+  #downloadLink:hover { background: #45a049; }
+</style>
 </head>
 <body>
-  <h1>Mulid Tools 종합 변환기</h1>
+<h1>Mulid Tools 테스트</h1>
 
-  <!-- 파일 선택 -->
-  <label>파일 선택:</label>
-  <input type="file" id="fileInput">
+<input type="file" id="fileInput">
+<select id="formatSelect">
+  <option value="wav">오디오 → WAV</option>
+  <option value="mp4">영상 → MP4</option>
+  <option value="png">이미지 → PNG</option>
+</select>
+<button id="convertBtn">변환 시작</button>
 
-  <!-- 변환 형식 선택 -->
-  <label>변환 형식:</label>
-  <select id="formatSelect">
-    <option value="wav">오디오 → WAV</option>
-    <option value="mp4">영상 → MP4</option>
-    <option value="png">이미지 → PNG</option>
-  </select>
+<div id="status"></div>
+<a id="downloadLink" style="display:none;">다운로드</a>
 
-  <!-- 변환 버튼 -->
-  <button id="convertBtn">변환 시작</button>
+<script>
+const SERVER_URL = 'https://mulid-tools-server.onrender.com'; // Render 서버 주소
 
-  <!-- 진행바 -->
-  <div id="progressBar"><div id="progress"></div></div>
+const fileInput = document.getElementById('fileInput');
+const formatSelect = document.getElementById('formatSelect');
+const convertBtn = document.getElementById('convertBtn');
+const status = document.getElementById('status');
+const downloadLink = document.getElementById('downloadLink');
 
-  <!-- 다운로드 링크 -->
-  <a id="downloadLink">다운로드</a>
+convertBtn.onclick = async () => {
+  if (!fileInput.files[0]) { alert('파일 선택!'); return; }
+  const file = fileInput.files[0];
+  const format = formatSelect.value;
 
-  <script>
-    const fileInput = document.getElementById('fileInput');
-    const formatSelect = document.getElementById('formatSelect');
-    const convertBtn = document.getElementById('convertBtn');
-    const progress = document.getElementById('progress');
-    const downloadLink = document.getElementById('downloadLink');
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('format', format);
 
-    convertBtn.onclick = async () => {
-      if (!fileInput.files[0]) {
-        alert('파일을 선택하세요!');
-        return;
-      }
+  status.textContent = '변환 중...';
+  downloadLink.style.display = 'none';
 
-      const file = fileInput.files[0];
-      const format = formatSelect.value;
+  try {
+    const res = await fetch(`${SERVER_URL}/convert/` + 
+      (format === 'wav' ? 'audio' : format === 'mp4' ? 'video' : 'image'),
+      { method: 'POST', body: formData }
+    );
+    const data = await res.json();
 
-      // 폼데이터 생성
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('format', format);
-
-      // 진행바 초기화
-      progress.style.width = '0%';
-      downloadLink.style.display = 'none';
-
-      try {
-        // Render 서버 주소
-        const res = await fetch(
-          'https://mulid-tools-server.onrender.com/convert/' + 
-          (format === 'wav' ? 'audio' : format === 'mp4' ? 'video' : 'image'),
-          { method: 'POST', body: formData }
-        );
-
-        const data = await res.json();
-
-        if (data.success) {
-          // 다운로드 링크 업데이트
-          downloadLink.href = 'https://mulid-tools-server.onrender.com' + data.output;
-          downloadLink.style.display = 'inline-block';
-          downloadLink.textContent = '다운로드: ' + data.output.split('/').pop();
-          progress.style.width = '100%';
-        } else {
-          alert('변환 실패: ' + (data.message || '알 수 없는 오류'));
-        }
-
-      } catch (err) {
-        alert('오류 발생: ' + err);
-      }
-    };
-  </script>
+    if (data.success) {
+      status.textContent = '✅ 변환 완료!';
+      downloadLink.href = SERVER_URL + data.output;
+      downloadLink.textContent = '⬇️ 다운로드: ' + data.output.split('/').pop();
+      downloadLink.style.display = 'inline-block';
+    } else {
+      status.textContent = '❌ 변환 실패: ' + data.message;
+    }
+  } catch(err) {
+    status.textContent = '⚠️ 오류 발생: ' + err;
+  }
+};
+</script>
 </body>
 </html>
