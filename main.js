@@ -12,7 +12,7 @@ uploadBtn.addEventListener("click", () => {
   const xhr = new XMLHttpRequest();
   xhr.open("POST", "https://mulid-tools-server.onrender.com/upload-and-convert");
 
-  // 진행률 표시
+  // 업로드 진행률 표시
   xhr.upload.onprogress = (e) => {
     if (e.lengthComputable) {
       const percent = (e.loaded / e.total) * 100;
@@ -36,6 +36,10 @@ uploadBtn.addEventListener("click", () => {
     } else {
       alert("변환 실패 😢");
     }
+  };
+
+  xhr.onerror = () => {
+    alert("업로드 중 오류 발생 😢");
   };
 
   xhr.send(formData);
