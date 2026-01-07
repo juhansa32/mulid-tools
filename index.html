@@ -2,14 +2,13 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>MULID Tools</title>
+  <title>종합 음원 변환기</title>
   <style>
     body {
       font-family: sans-serif;
       text-align: center;
       padding: 50px;
     }
-
     #progressContainer {
       width: 80%;
       max-width: 400px;
@@ -19,7 +18,6 @@
       margin: 20px auto;
       overflow: hidden;
     }
-
     #progressBar {
       width: 0%;
       height: 100%;
@@ -29,8 +27,7 @@
       line-height: 25px;
       border-radius: 10px;
     }
-
-    input, button {
+    input, button, select {
       margin: 10px;
       padding: 10px 20px;
       font-size: 16px;
@@ -38,9 +35,15 @@
   </style>
 </head>
 <body>
-  <h1>음원 변환 도구</h1>
+  <h1>종합 음원 변환기</h1>
 
   <input type="file" id="fileInput" />
+  <select id="formatSelect">
+    <option value="wav">WAV</option>
+    <option value="mp3">MP3</option>
+    <option value="ogg">OGG</option>
+    <option value="m4a">M4A</option>
+  </select>
   <button id="uploadBtn">업로드 & 변환</button>
 
   <div id="progressContainer">
@@ -50,19 +53,22 @@
   <script>
     const uploadBtn = document.getElementById("uploadBtn");
     const fileInput = document.getElementById("fileInput");
+    const formatSelect = document.getElementById("formatSelect");
     const progressBar = document.getElementById("progressBar");
 
     uploadBtn.addEventListener("click", () => {
       const file = fileInput.files[0];
       if (!file) return alert("파일 선택 먼저!");
 
+      const outputFormat = formatSelect.value;
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("format", outputFormat);
 
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "https://mulid-tools-server.onrender.com/upload-and-convert");
 
-      // 업로드 진행률 표시
+      // 진행률 표시
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
           const percent = (e.loaded / e.total) * 100;
@@ -88,10 +94,7 @@
         }
       };
 
-      xhr.onerror = () => {
-        alert("업로드 중 오류 발생 😢");
-      };
-
+      xhr.onerror = () => alert("업로드 중 오류 발생 😢");
       xhr.send(formData);
     });
   </script>
