@@ -1,119 +1,65 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>MULID — All-in-One Converter</title>
-
-<!-- Libraries (CDN) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-<style>
-:root{
-  --bg:#e9e9ea; --card:#fff; --muted:#666; --accent:#111;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR';
-  background:var(--bg);
-  -webkit-font-smoothing:antialiased;
-  color:var(--accent);
-  padding:28px;
-}
-.container{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 360px;gap:20px}
-.header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}
-.logo{font-weight:700;font-size:20px}
-.small{color:var(--muted);font-size:13px}
-.card{background:var(--card);border-radius:12px;padding:18px;border:1px solid #e6e6e6;box-shadow:0 6px 20px rgba(0,0,0,0.04)}
-#dropArea{min-height:220px;border:2px dashed #ddd;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer}
-button{padding:10px;border-radius:10px;border:1px solid #d6d6d6;font-size:14px}
-button.primary{background:var(--accent);color:#fff;border:0;font-weight:600}
-.progress{height:10px;background:#f0f0f0;border-radius:8px;overflow:hidden}
-.progress > i{display:block;height:100%;width:0;background:var(--accent)}
-.log{height:140px;overflow:auto;background:#fafafa;padding:10px;border-radius:8px;border:1px solid #f0f0f0;font-size:13px;color:var(--muted)}
-.footer{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:12px;font-size:13px}
-
-.notice{
-  grid-column:1/-1;
-  background:#fff3cd;
-  border:1px solid #ffeeba;
-  padding:12px;
-  border-radius:10px;
-  font-size:14px;
-}
-
-@media (max-width:980px){
-  .container{grid-template-columns:1fr}
-}
-</style>
+  <meta charset="UTF-8" />
+  <title>Mulid Tools - 무료 오디오 변환기</title>
+  <meta name="description" content="설치 없이 mp3, wav 등 오디오 파일을 무료로 변환하세요. 브라우저에서 바로 사용 가능합니다.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
-
 <body>
-<div class="container">
 
-  <!-- ⚠️ 서비스 안내 -->
-  <div class="notice">
-    ⚠️ <strong>안내</strong><br>
-    현재 이 페이지는 <b>클라이언트 UI 공개용</b>입니다.<br>
-    실제 변환 기능은 <b>서버 배포 후</b> 활성화됩니다.
-  </div>
+  <main style="max-width:720px;margin:40px auto;font-family:sans-serif;line-height:1.6;">
 
-  <div class="header">
-    <div>
-      <div class="logo">MULID</div>
-      <div class="small">All-in-one Converter — 이미지 · 영상 · 오디오 · 문서</div>
-    </div>
-    <div class="small">Client UI · Server Pending</div>
-  </div>
+    <!-- 🔥 헤더 -->
+    <section style="text-align:center;margin-bottom:40px;">
+      <h1>Mulid Tools</h1>
+      <p>
+        설치 없이 사용하는 <strong>무료 오디오 변환 웹 도구</strong><br />
+        mp3 · wav 등 파일을 브라우저에서 바로 변환하세요.
+      </p>
+    </section>
 
-  <div class="card">
-    <h3>파일 추가</h3>
-    <div id="dropArea">
-      <div>📂 파일을 여기에 놓으세요</div>
-      <div class="small">현재 변환은 비활성화 상태입니다</div>
-    </div>
+    <!-- 🎯 변환 영역 -->
+    <section style="border:1px solid #ddd;padding:20px;border-radius:8px;">
+      <h2>파일 변환</h2>
+      <input type="file" id="fileInput" />
+      <br /><br />
+      <button id="uploadBtn">변환하기</button>
 
-    <div style="margin-top:12px">
-      <button class="primary" id="convertBtn">변환 시작</button>
-      <button id="clearBtn">지우기</button>
-    </div>
+      <!-- 로딩 UI (네가 만든 거 연결) -->
+      <div id="loading" style="display:none;margin-top:15px;">
+        <div>변환 중입니다… ⏳</div>
+        <progress id="progressBar" value="0" max="100"></progress>
+      </div>
+    </section>
 
-    <div style="margin-top:12px">
-      <div class="small">진행</div>
-      <div class="progress"><i id="progressBar"></i></div>
-    </div>
+    <!-- 📘 사용 방법 -->
+    <section style="margin-top:40px;">
+      <h2>사용 방법</h2>
+      <ol>
+        <li>변환할 오디오 파일을 선택합니다.</li>
+        <li>변환하기 버튼을 누릅니다.</li>
+        <li>변환이 완료되면 파일을 다운로드합니다.</li>
+      </ol>
+    </section>
 
-    <div style="margin-top:12px">
-      <div class="small">로그</div>
-      <div id="log" class="log">서비스 준비 중입니다.</div>
-    </div>
-  </div>
+    <!-- 🔒 안내 -->
+    <section style="margin-top:30px;">
+      <h2>안전 안내</h2>
+      <ul>
+        <li>업로드된 파일은 변환 후 자동으로 삭제됩니다.</li>
+        <li>회원가입 없이 무료로 이용할 수 있습니다.</li>
+        <li>브라우저에서 직접 처리되며 악성코드는 없습니다.</li>
+      </ul>
+    </section>
 
-  <aside class="card">
-    <h4>현재 상태</h4>
-    <ul class="small">
-      <li>UI 배포 완료</li>
-      <li>GitHub Pages 정상</li>
-      <li>서버 ffmpeg 미연결</li>
-    </ul>
-    <p class="small">※ 실제 변환은 서버 단계에서 활성화됩니다.</p>
-  </aside>
+    <!-- 🧾 푸터 -->
+    <footer style="margin-top:50px;font-size:14px;color:#666;text-align:center;">
+      <p>© 2026 Mulid Tools</p>
+      <p>본 사이트는 개인 프로젝트이며 테스트용 서비스입니다.</p>
+    </footer>
 
-  <div class="footer">MULID © 2025 — Service UI Stage</div>
-</div>
-
-<script>
-/* 1단계: 변환 기능 비활성화 */
-document.getElementById('convertBtn').addEventListener('click', () => {
-  alert(
-    '현재는 서비스 준비 단계입니다.\n\n' +
-    '변환 기능은 서버 배포 후 활성화됩니다.'
-  );
-});
-</script>
+  </main>
 
 </body>
 </html>
